@@ -1,0 +1,85 @@
+.image-card {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s;
+  }
+  
+  .image-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .image-container {
+    position: relative;
+    height: 200px;
+  }
+  
+  .image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .image-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .image-status.published {
+    background-color: #27ae60;
+  }
+  
+  .image-status.unpublished {
+    background-color: #e74c3c;
+  }
+  
+  .image-info {
+    padding: 15px;
+    position: relative;
+  }
+  
+  .image-title {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #2c3e50;
+  }
+  
+  .image-price {
+    display: block;
+    color: #e74c3c;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  
+  .image-name {
+    display: block;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+  }
+  
+  .publish-button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .publish-button:hover {
+    background-color: #219653;
+  }
+  
