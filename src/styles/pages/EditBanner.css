@@ -1,0 +1,48 @@
+/* src/styles/pages/EditBanner.css */
+.edit-banner-page {
+    padding: 20px 0;
+  }
+  
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+  }
+  
+  .back-button {
+    padding: 8px 16px;
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .back-button:hover {
+    background-color: #e8eaed;
+  }
+  
+  .loading-indicator {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #666;
+  }
+  
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-start;
+    }
+  }

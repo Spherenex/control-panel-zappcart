@@ -1,0 +1,96 @@
+/* src/styles/components/Header.css */
+.header {
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .logo a {
+    font-size: 20px;
+    font-weight: 700;
+    color: #4285f4;
+    text-decoration: none;
+  }
+  
+  .nav ul {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+  }
+  
+  .nav a {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 0;
+    transition: color 0.3s;
+  }
+  
+  .nav a:hover {
+    color: #4285f4;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .email {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .logout-btn {
+    background-color: transparent;
+    color: #4285f4;
+    border: 1px solid #4285f4;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .logout-btn:hover {
+    background-color: #4285f4;
+    color: white;
+  }
+  
+  @media (max-width: 768px) {
+    .header-container {
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .nav ul {
+      gap: 15px;
+    }
+    
+    .user-info {
+      width: 100%;
+      justify-content: space-between;
+      border-top: 1px solid #eee;
+      padding-top: 15px;
+      margin-top: 10px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .nav ul {
+      gap: 10px;
+    }
+  }
