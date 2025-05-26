@@ -10,7 +10,7 @@ const CreateBanner = () => {
   return (
     <div className="create-banner-page">
       <div className="page-header">
-        <h1>Create New Banner</h1>
+        <h1>Create and Edit Banner</h1>
         <button className="back-button" onClick={() => navigate('/')}>
           Back to Dashboard
         </button>

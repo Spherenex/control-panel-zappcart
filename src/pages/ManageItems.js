@@ -1,14 +1,24 @@
+
+
+
+
+
+
+
 // import React, { useState, useEffect } from 'react';
 // import { ref, onValue, update, remove } from 'firebase/database';
-// import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'; // Added imports
-// import { db, storage } from '../firebase/config'; // Added storage import
+// import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+// import { db, storage } from '../firebase/config';
 // import '../styles/pages/ManageItems.css';
 
 // const ManageItems = () => {
+//   const [activeTab, setActiveTab] = useState('items'); // 'items' or 'categories'
 //   const [items, setItems] = useState([]);
+//   const [categories, setCategories] = useState([]);
 //   const [loading, setLoading] = useState(true);
 //   const [error, setError] = useState(null);
 //   const [editingItem, setEditingItem] = useState(null);
+//   const [editingCategory, setEditingCategory] = useState(null);
 //   const [editFormData, setEditFormData] = useState({
 //     name: '',
 //     description: '',
@@ -19,52 +29,86 @@
 //     originalPrice: '',
 //     discount: '',
 //     deliveryTime: '30',
+//     category: 'Meat',
 //     image: null,
-//     featured: false
+//     featured: false,
+//     isActive: true,
+//     meatCut: 'jc-jatka'
+//   });
+//   const [editCategoryData, setEditCategoryData] = useState({
+//     name: '',
+//     description: '',
+//     image: null,
+//     isActive: true
 //   });
 
-//   useEffect(() => {
-//     const fetchItems = () => {
-//       try {
-//         console.log("Fetching all items from Firebase...");
-//         const itemsRef = ref(db, 'items');
+//   const predefinedCategories = ['Meat', 'Seafood', 'Shop by categories', 'Bestsellers', 'Match Day Essentials', 'Premium fish & seafood selection'];
 
-//         onValue(itemsRef, (snapshot) => {
-//           if (snapshot.exists()) {
-//             const itemsData = snapshot.val();
-//             const itemsArray = Object.keys(itemsData).map(key => ({
-//               ...itemsData[key],
-//               firebaseKey: key
-//             }));
-//             setItems(itemsArray);
-//           } else {
-//             setItems([]);
-//           }
-//           setLoading(false);
-//         }, (error) => {
-//           console.error("Error fetching items:", error);
-//           setError("Failed to load items");
-//           setLoading(false);
-//         });
-//       } catch (error) {
-//         console.error('Error setting up listener:', error);
-//         setError("Failed to load items");
+//   useEffect(() => {
+//     // Fetch Items
+//     const itemsRef = ref(db, 'items');
+//     const itemsUnsubscribe = onValue(itemsRef, (snapshot) => {
+//       try {
+//         if (snapshot.exists()) {
+//           const itemsData = [];
+//           snapshot.forEach((childSnapshot) => {
+//             itemsData.push({
+//               firebaseKey: childSnapshot.key,
+//               ...childSnapshot.val()
+//             });
+//           });
+//           setItems(itemsData);
+//         } else {
+//           setItems([]);
+//         }
+//       } catch (err) {
+//         console.error('Error fetching items:', err);
+//         setError('Failed to load items. Please try again later.');
+//       }
+//     }, (err) => {
+//       console.error('Error listening to items:', err);
+//       setError('Failed to load items. Please try again later.');
+//     });
+
+//     // Fetch Categories
+//     const categoriesRef = ref(db, 'displayCategories');
+//     const categoriesUnsubscribe = onValue(categoriesRef, (snapshot) => {
+//       try {
+//         if (snapshot.exists()) {
+//           const categoriesData = [];
+//           snapshot.forEach((childSnapshot) => {
+//             categoriesData.push({
+//               firebaseKey: childSnapshot.key,
+//               ...childSnapshot.val()
+//             });
+//           });
+//           setCategories(categoriesData);
+//         } else {
+//           setCategories([]);
+//         }
+//       } catch (err) {
+//         console.error('Error fetching categories:', err);
+//         setError('Failed to load categories. Please try again later.');
+//       } finally {
 //         setLoading(false);
 //       }
-//     };
-
-//     fetchItems();
+//     }, (err) => {
+//       console.error('Error listening to categories:', err);
+//       setError('Failed to load categories. Please try again later.');
+//       setLoading(false);
+//     });
 
 //     return () => {
-//       const itemsRef = ref(db, 'items');
-//       onValue(itemsRef, () => {}, { onlyOnce: true });
+//       itemsUnsubscribe();
+//       categoriesUnsubscribe();
 //     };
 //   }, []);
 
-//   const handleEdit = (item) => {
+//   // Item Management Functions
+//   const handleEditItem = (item) => {
 //     setEditingItem(item);
 //     setEditFormData({
-//       name: item.name,
+//       name: item.name || '',
 //       description: item.description || '',
 //       weight: item.weight || '',
 //       pieces: item.pieces || '',
@@ -73,24 +117,23 @@
 //       originalPrice: item.originalPrice || '',
 //       discount: item.discount || '',
 //       deliveryTime: item.deliveryTime || '30',
+//       category: item.category || 'Meat',
 //       image: null,
-//       featured: item.featured || false
+//       featured: item.featured || false,
+//       isActive: item.isActive || true,
+//       meatCut: item.meatCut || 'jc-jatka'
 //     });
 //   };
 
-//   const handleInputChange = (e) => {
+//   const handleItemInputChange = (e) => {
 //     const { name, value, type, checked, files } = e.target;
-//     if (type === 'file') {
-//       setEditFormData(prev => ({ ...prev, [name]: files[0] }));
-//     } else {
-//       setEditFormData(prev => ({
-//         ...prev,
-//         [name]: type === 'checkbox' ? checked : value
-//       }));
-//     }
+//     setEditFormData(prev => ({
+//       ...prev,
+//       [name]: type === 'file' ? files[0] : type === 'checkbox' ? checked : value
+//     }));
 //   };
 
-//   const handleSaveEdit = async (e) => {
+//   const handleSaveItemEdit = async (e) => {
 //     e.preventDefault();
 //     setLoading(true);
 
@@ -98,222 +141,539 @@
 //       let imageUrl = editingItem.image;
 
 //       if (editFormData.image) {
-//         const folderPath = editingItem.category === "Shop by categories" && editingItem.displayCategory
-//           ? `items/${editingItem.displayCategory}`
-//           : `items/${editingItem.category.replace(/\s+/g, '-').toLowerCase()}`;
+//         const folderPath = editFormData.category === 'Shop by categories' && editFormData.displayCategory
+//           ? `items/${editFormData.displayCategory}/${editFormData.meatCut}`
+//           : `items/${editFormData.category.replace(/\s+/g, '-').toLowerCase()}/${editFormData.meatCut}`;
 //         const imageStorageRef = storageRef(storage, `${folderPath}/${Date.now()}_${editFormData.image.name}`);
 //         const snapshot = await uploadBytes(imageStorageRef, editFormData.image);
 //         imageUrl = await getDownloadURL(snapshot.ref);
 //       }
 
 //       const updatedItem = {
-//         id: editingItem.id,
+//         ...editingItem,
 //         name: editFormData.name,
 //         description: editFormData.description,
 //         weight: editFormData.weight,
 //         pieces: editFormData.pieces,
 //         serves: parseInt(editFormData.serves) || 0,
-//         price: Number(editFormData.price),
-//         originalPrice: Number(editFormData.originalPrice),
-//         discount: Number(editFormData.discount) || 0,
-//         deliveryTime: Number(editFormData.deliveryTime) || 30,
-//         category: editingItem.category,
+//         price: parseFloat(editFormData.price) || 0,
+//         originalPrice: parseFloat(editFormData.originalPrice) || 0,
+//         discount: parseFloat(editFormData.discount) || 0,
+//         deliveryTime: parseInt(editFormData.deliveryTime) || 30,
+//         category: editFormData.category,
+//         image: imageUrl,
 //         featured: editFormData.featured,
-//         createdAt: editingItem.createdAt,
-//         image: imageUrl
+//         isActive: editFormData.isActive,
+//         meatCut: editFormData.meatCut,
+//         updatedAt: Date.now()
 //       };
-
-//       if (editingItem.category === "Shop by categories" && editingItem.displayCategory) {
-//         updatedItem.displayCategory = editingItem.displayCategory;
-//       }
 
 //       await update(ref(db, `items/${editingItem.firebaseKey}`), updatedItem);
 //       setEditingItem(null);
-//       setEditFormData({
-//         name: '',
-//         description: '',
-//         weight: '',
-//         pieces: '',
-//         serves: '',
-//         price: '',
-//         originalPrice: '',
-//         discount: '',
-//         deliveryTime: '30',
-//         image: null,
-//         featured: false
-//       });
+//       resetItemForm();
 //     } catch (error) {
 //       console.error('Error updating item:', error);
-//       setError("Failed to update item");
+//       setError('Failed to update item. Please try again.');
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
-//   const handleDelete = async (firebaseKey) => {
-//     if (window.confirm('Are you sure you want to delete this item?')) {
+//   const handleToggleItemStatus = async (firebaseKey, currentActive) => {
+//     try {
+//       const itemRef = ref(db, `items/${firebaseKey}`);
+//       await update(itemRef, { 
+//         isActive: !currentActive,
+//         updatedAt: Date.now()
+//       });
+//     } catch (error) {
+//       console.error('Error toggling item status:', error);
+//       setError('Failed to update item status. Please try again.');
+//     }
+//   };
+
+//   const handleDeleteItem = async (firebaseKey) => {
+//     if (window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
 //       try {
 //         await remove(ref(db, `items/${firebaseKey}`));
 //       } catch (error) {
 //         console.error('Error deleting item:', error);
-//         setError("Failed to delete item");
+//         setError('Failed to delete item. Please try again.');
 //       }
 //     }
 //   };
 
-//   if (loading) {
-//     return <div className="loading">Loading items...</div>;
+//   // Category Management Functions
+//   const handleEditCategory = (category) => {
+//     setEditingCategory(category);
+//     setEditCategoryData({
+//       name: category.name || '',
+//       description: category.description || '',
+//       image: null,
+//       isActive: category.isActive !== false
+//     });
+//   };
+
+//   const handleCategoryInputChange = (e) => {
+//     const { name, value, type, checked, files } = e.target;
+//     setEditCategoryData(prev => ({
+//       ...prev,
+//       [name]: type === 'file' ? files[0] : type === 'checkbox' ? checked : value
+//     }));
+//   };
+
+//   const handleSaveCategoryEdit = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+
+//     try {
+//       let imageUrl = editingCategory.image;
+
+//       if (editCategoryData.image) {
+//         const imageStorageRef = storageRef(storage, `displayCategories/${Date.now()}_${editCategoryData.image.name}`);
+//         const snapshot = await uploadBytes(imageStorageRef, editCategoryData.image);
+//         imageUrl = await getDownloadURL(snapshot.ref);
+//       }
+
+//       const updatedCategory = {
+//         ...editingCategory,
+//         name: editCategoryData.name,
+//         description: editCategoryData.description,
+//         image: imageUrl,
+//         isActive: editCategoryData.isActive,
+//         updatedAt: Date.now()
+//       };
+
+//       await update(ref(db, `displayCategories/${editingCategory.firebaseKey}`), updatedCategory);
+//       setEditingCategory(null);
+//       resetCategoryForm();
+//     } catch (error) {
+//       console.error('Error updating category:', error);
+//       setError('Failed to update category. Please try again.');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleToggleCategoryStatus = async (firebaseKey, currentActive) => {
+//     try {
+//       const categoryRef = ref(db, `displayCategories/${firebaseKey}`);
+//       await update(categoryRef, { 
+//         isActive: !currentActive,
+//         updatedAt: Date.now()
+//       });
+//     } catch (error) {
+//       console.error('Error toggling category status:', error);
+//       setError('Failed to update category status. Please try again.');
+//     }
+//   };
+
+//   const handleDeleteCategory = async (firebaseKey, categoryName) => {
+//     if (window.confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone and may affect existing products.`)) {
+//       try {
+//         await remove(ref(db, `displayCategories/${firebaseKey}`));
+//       } catch (error) {
+//         console.error('Error deleting category:', error);
+//         setError('Failed to delete category. Please try again.');
+//       }
+//     }
+//   };
+
+//   // Utility Functions
+//   const resetItemForm = () => {
+//     setEditFormData({
+//       name: '',
+//       description: '',
+//       weight: '',
+//       pieces: '',
+//       serves: '',
+//       price: '',
+//       originalPrice: '',
+//       discount: '',
+//       deliveryTime: '30',
+//       category: 'Meat',
+//       image: null,
+//       featured: false,
+//       isActive: true,
+//       meatCut: 'jc-jatka'
+//     });
+//   };
+
+//   const resetCategoryForm = () => {
+//     setEditCategoryData({
+//       name: '',
+//       description: '',
+//       image: null,
+//       isActive: true
+//     });
+//   };
+
+//   if (loading && items.length === 0 && categories.length === 0) {
+//     return (
+//       <div className="manage-items-container">
+//         <div className="loading-container">
+//           <div className="spinner"></div>
+//           <p>Loading data...</p>
+//         </div>
+//       </div>
+//     );
 //   }
 
 //   if (error) {
-//     return <div className="error">{error}</div>;
+//     return (
+//       <div className="manage-items-container">
+//         <div className="alert error">
+//           {error}
+//           <button onClick={() => setError(null)} className="close-error">×</button>
+//         </div>
+//       </div>
+//     );
 //   }
 
 //   return (
 //     <div className="manage-items-container">
-//       <h1>Manage Items</h1>
-//       {items.length === 0 ? (
-//         <div className="no-items">No items available to manage.</div>
-//       ) : (
-//         <div className="items-list">
-//           {items.map(item => (
-//             <div key={item.firebaseKey} className="item-card">
-//               <img src={item.image} alt={item.name} className="item-image" />
-//               <div className="item-details">
-//                 <h3>{item.name}</h3>
-//                 <p><strong>Category:</strong> {item.category}</p>
-//                 {item.displayCategory && <p><strong>Display Category:</strong> {item.displayCategory}</p>}
-//                 <p><strong>Price:</strong> ₹{item.price}</p>
-//                 <p><strong>Original Price:</strong> ₹{item.originalPrice}</p>
-//                 <p><strong>Discount:</strong> {item.discount}%</p>
-//               </div>
-//               <div className="item-actions">
-//                 <button onClick={() => handleEdit(item)} className="edit-btn">Edit</button>
-//                 <button onClick={() => handleDelete(item.firebaseKey)} className="delete-btn">Delete</button>
-//               </div>
-//               {editingItem && editingItem.firebaseKey === item.firebaseKey && (
-//                 <form onSubmit={handleSaveEdit} className="edit-form">
-//                   <div className="form-group">
-//                     <label htmlFor="name">Name*</label>
-//                     <input
-//                       type="text"
-//                       id="name"
-//                       name="name"
-//                       value={editFormData.name}
-//                       onChange={handleInputChange}
-//                       required
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="description">Description</label>
-//                     <textarea
-//                       id="description"
-//                       name="description"
-//                       value={editFormData.description}
-//                       onChange={handleInputChange}
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="weight">Weight*</label>
-//                     <input
-//                       type="text"
-//                       id="weight"
-//                       name="weight"
-//                       value={editFormData.weight}
-//                       onChange={handleInputChange}
-//                       required
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="pieces">Pieces</label>
-//                     <input
-//                       type="text"
-//                       id="pieces"
-//                       name="pieces"
-//                       value={editFormData.pieces}
-//                       onChange={handleInputChange}
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="serves">Serves</label>
-//                     <input
-//                       type="number"
-//                       id="serves"
-//                       name="serves"
-//                       value={editFormData.serves}
-//                       onChange={handleInputChange}
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="originalPrice">Original Price* (₹)</label>
-//                     <input
-//                       type="number"
-//                       id="originalPrice"
-//                       name="originalPrice"
-//                       value={editFormData.originalPrice}
-//                       onChange={handleInputChange}
-//                       required
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="discount">Discount %</label>
-//                     <input
-//                       type="number"
-//                       id="discount"
-//                       name="discount"
-//                       value={editFormData.discount}
-//                       onChange={handleInputChange}
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="price">Price* (₹)</label>
-//                     <input
-//                       type="number"
-//                       id="price"
-//                       name="price"
-//                       value={editFormData.price}
-//                       onChange={handleInputChange}
-//                       required
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="deliveryTime">Delivery Time (minutes)</label>
-//                     <input
-//                       type="number"
-//                       id="deliveryTime"
-//                       name="deliveryTime"
-//                       value={editFormData.deliveryTime}
-//                       onChange={handleInputChange}
-//                     />
-//                   </div>
-//                   <div className="form-group">
-//                     <label htmlFor="image">Image</label>
-//                     <input
-//                       type="file"
-//                       id="image"
-//                       name="image"
-//                       accept="image/*"
-//                       onChange={handleInputChange}
-//                     />
-//                   </div>
-//                   <div className="form-group checkbox">
-//                     <input
-//                       type="checkbox"
-//                       id="featured"
-//                       name="featured"
-//                       checked={editFormData.featured}
-//                       onChange={handleInputChange}
-//                     />
-//                     <label htmlFor="featured">Featured Item</label>
-//                   </div>
-//                   <button type="submit" className="save-btn" disabled={loading}>
-//                     {loading ? 'Saving...' : 'Save Changes'}
-//                   </button>
-//                   <button type="button" onClick={() => setEditingItem(null)} className="cancel-btn">Cancel</button>
-//                 </form>
-//               )}
+//       <div className="page-header">
+//         <h1>Manage Items & Categories</h1>
+//         <p>Admin panel to manage all products and categories</p>
+//       </div>
+
+//       {/* Tab Navigation */}
+//       <div className="tab-navigation">
+//         <button 
+//           className={`tab-button ${activeTab === 'items' ? 'active' : ''}`}
+//           onClick={() => setActiveTab('items')}
+//         >
+//           Manage Items ({items.length})
+//         </button>
+//         <button 
+//           className={`tab-button ${activeTab === 'categories' ? 'active' : ''}`}
+//           onClick={() => setActiveTab('categories')}
+//         >
+//           Manage Categories ({categories.length})
+//         </button>
+//       </div>
+
+//       {/* Items Tab */}
+//       {activeTab === 'items' && (
+//         <div className="tab-content">
+//           {items.length === 0 ? (
+//             <div className="no-items">
+//               <h3>No items available to manage</h3>
+//               <p>Items created through the admin panel will appear here.</p>
 //             </div>
-//           ))}
+//           ) : (
+//             <div className="items-list">
+//               <div className="list-header">
+//                 <h2>All Items ({items.length})</h2>
+//               </div>
+//               {items.map(item => (
+//                 <div key={item.firebaseKey} className={`item-card ${!item.isActive ? 'inactive' : ''}`}>
+//                   <div className="item-image">
+//                     {item.image ? (
+//                       <img src={item.image} alt={item.name} />
+//                     ) : (
+//                       <div className="no-image">No image uploaded</div>
+//                     )}
+//                   </div>
+//                   <div className="item-details">
+//                     <h3>{item.name}</h3>
+//                     <div className="item-info">
+//                       <p><strong>Category:</strong> {item.category}</p>
+//                       {item.displayCategory && <p><strong>Display Category:</strong> {item.displayCategory}</p>}
+//                       {item.meatCut && <p><strong>Meat Cut:</strong> {item.meatCut === 'jc-jatka' ? 'JC Jatka' : 'Halal Cut'}</p>}
+//                       <p><strong>Weight:</strong> {item.weight}</p>
+//                       <p><strong>Price:</strong> ₹{item.price}</p>
+//                       <p><strong>Original Price:</strong> ₹{item.originalPrice}</p>
+//                       <p><strong>Discount:</strong> {item.discount}%</p>
+//                       <p><strong>Status:</strong> 
+//                         <span className={`status ${item.isActive ? 'active' : 'inactive'}`}>
+//                           {item.isActive ? 'Active' : 'Inactive'}
+//                         </span>
+//                       </p>
+//                       {item.featured && <p><strong>Featured:</strong> <span className="featured-badge">Yes</span></p>}
+//                     </div>
+//                   </div>
+//                   <div className="item-actions">
+//                     <button onClick={() => handleEditItem(item)} className="edit-button">Edit</button>
+//                     <button 
+//                       onClick={() => handleToggleItemStatus(item.firebaseKey, item.isActive)} 
+//                       className={`toggle-button ${item.isActive ? 'deactivate' : 'activate'}`}
+//                     >
+//                       {item.isActive ? 'Deactivate' : 'Activate'}
+//                     </button>
+//                     <button onClick={() => handleDeleteItem(item.firebaseKey)} className="delete-button">Delete</button>
+//                   </div>
+                  
+//                   {/* Edit Item Form */}
+//                   {editingItem && editingItem.firebaseKey === item.firebaseKey && (
+//                     <div className="edit-form-overlay">
+//                       <form onSubmit={handleSaveItemEdit} className="edit-form">
+//                         <h3>Edit Item</h3>
+//                         <div className="form-row">
+//                           <div className="form-group">
+//                             <label htmlFor="name">Name*</label>
+//                             <input
+//                               type="text"
+//                               id="name"
+//                               name="name"
+//                               value={editFormData.name}
+//                               onChange={handleItemInputChange}
+//                               required
+//                             />
+//                           </div>
+//                           <div className="form-group">
+//                             <label htmlFor="weight">Weight*</label>
+//                             <input
+//                               type="text"
+//                               id="weight"
+//                               name="weight"
+//                               value={editFormData.weight}
+//                               onChange={handleItemInputChange}
+//                               required
+//                             />
+//                           </div>
+//                         </div>
+                        
+//                         <div className="form-group">
+//                           <label htmlFor="description">Description</label>
+//                           <textarea
+//                             id="description"
+//                             name="description"
+//                             value={editFormData.description}
+//                             onChange={handleItemInputChange}
+//                           />
+//                         </div>
+
+//                         <div className="form-row">
+//                           <div className="form-group">
+//                             <label htmlFor="originalPrice">Original Price* (₹)</label>
+//                             <input
+//                               type="number"
+//                               id="originalPrice"
+//                               name="originalPrice"
+//                               value={editFormData.originalPrice}
+//                               onChange={handleItemInputChange}
+//                               required
+//                             />
+//                           </div>
+//                           <div className="form-group">
+//                             <label htmlFor="price">Selling Price* (₹)</label>
+//                             <input
+//                               type="number"
+//                               id="price"
+//                               name="price"
+//                               value={editFormData.price}
+//                               onChange={handleItemInputChange}
+//                               required
+//                             />
+//                           </div>
+//                           <div className="form-group">
+//                             <label htmlFor="discount">Discount %</label>
+//                             <input
+//                               type="number"
+//                               id="discount"
+//                               name="discount"
+//                               value={editFormData.discount}
+//                               onChange={handleItemInputChange}
+//                             />
+//                           </div>
+//                         </div>
+
+//                         <div className="form-row">
+//                           <div className="form-group">
+//                             <label htmlFor="category">Category*</label>
+//                             <select
+//                               id="category"
+//                               name="category"
+//                               value={editFormData.category}
+//                               onChange={handleItemInputChange}
+//                               required
+//                             >
+//                               {predefinedCategories.map(cat => (
+//                                 <option key={cat} value={cat}>{cat}</option>
+//                               ))}
+//                             </select>
+//                           </div>
+//                           <div className="form-group">
+//                             <label htmlFor="meatCut">Meat Cut</label>
+//                             <select
+//                               id="meatCut"
+//                               name="meatCut"
+//                               value={editFormData.meatCut}
+//                               onChange={handleItemInputChange}
+//                             >
+//                               <option value="jc-jatka">JC Jatka</option>
+//                               <option value="halal-cut">Halal Cut</option>
+//                             </select>
+//                           </div>
+//                         </div>
+                        
+//                         <div className="form-group">
+//                           <label htmlFor="image">Update Image</label>
+//                           <input
+//                             type="file"
+//                             id="image"
+//                             name="image"
+//                             accept="image/*"
+//                             onChange={handleItemInputChange}
+//                           />
+//                         </div>
+
+//                         <div className="form-checkboxes">
+//                           <div className="checkbox-group">
+//                             <input
+//                               type="checkbox"
+//                               id="featured"
+//                               name="featured"
+//                               checked={editFormData.featured}
+//                               onChange={handleItemInputChange}
+//                             />
+//                             <label htmlFor="featured">Featured Item</label>
+//                           </div>
+//                           <div className="checkbox-group">
+//                             <input
+//                               type="checkbox"
+//                               id="isActive"
+//                               name="isActive"
+//                               checked={editFormData.isActive}
+//                               onChange={handleItemInputChange}
+//                             />
+//                             <label htmlFor="isActive">Active</label>
+//                           </div>
+//                         </div>
+
+//                         <div className="form-actions">
+//                           <button type="submit" className="save-button" disabled={loading}>
+//                             {loading ? 'Saving...' : 'Save Changes'}
+//                           </button>
+//                           <button type="button" onClick={() => setEditingItem(null)} className="cancel-button">
+//                             Cancel
+//                           </button>
+//                         </div>
+//                       </form>
+//                     </div>
+//                   )}
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//       {/* Categories Tab */}
+//       {activeTab === 'categories' && (
+//         <div className="tab-content">
+//           {categories.length === 0 ? (
+//             <div className="no-items">
+//               <h3>No categories available to manage</h3>
+//               <p>Categories created through the admin panel will appear here.</p>
+//             </div>
+//           ) : (
+//             <div className="categories-list">
+//               <div className="list-header">
+//                 <h2>All Categories ({categories.length})</h2>
+//               </div>
+//               {categories.map(category => (
+//                 <div key={category.firebaseKey} className={`category-card ${!category.isActive ? 'inactive' : ''}`}>
+//                   <div className="category-image">
+//                     {category.image ? (
+//                       <img src={category.image} alt={category.name} />
+//                     ) : (
+//                       <div className="no-image">No image uploaded</div>
+//                     )}
+//                   </div>
+//                   <div className="category-details">
+//                     <h3>{category.name}</h3>
+//                     <div className="category-info">
+//                       <p><strong>Description:</strong> {category.description || 'No description'}</p>
+//                       <p><strong>ID:</strong> {category.id}</p>
+//                       <p><strong>Product Count:</strong> {category.productCount || 0}</p>
+//                       <p><strong>Status:</strong> 
+//                         <span className={`status ${category.isActive !== false ? 'active' : 'inactive'}`}>
+//                           {category.isActive !== false ? 'Active' : 'Inactive'}
+//                         </span>
+//                       </p>
+//                       {category.createdAt && (
+//                         <p><strong>Created:</strong> {new Date(category.createdAt).toLocaleDateString()}</p>
+//                       )}
+//                     </div>
+//                   </div>
+//                   <div className="category-actions">
+//                     <button onClick={() => handleEditCategory(category)} className="edit-button">Edit</button>
+//                     <button 
+//                       onClick={() => handleToggleCategoryStatus(category.firebaseKey, category.isActive !== false)} 
+//                       className={`toggle-button ${category.isActive !== false ? 'deactivate' : 'activate'}`}
+//                     >
+//                       {category.isActive !== false ? 'Deactivate' : 'Activate'}
+//                     </button>
+//                     <button onClick={() => handleDeleteCategory(category.firebaseKey, category.name)} className="delete-button">Delete</button>
+//                   </div>
+                  
+//                   {/* Edit Category Form */}
+//                   {editingCategory && editingCategory.firebaseKey === category.firebaseKey && (
+//                     <div className="edit-form-overlay">
+//                       <form onSubmit={handleSaveCategoryEdit} className="edit-form">
+//                         <h3>Edit Category</h3>
+//                         <div className="form-group">
+//                           <label htmlFor="categoryName">Category Name*</label>
+//                           <input
+//                             type="text"
+//                             id="categoryName"
+//                             name="name"
+//                             value={editCategoryData.name}
+//                             onChange={handleCategoryInputChange}
+//                             required
+//                           />
+//                         </div>
+                        
+//                         <div className="form-group">
+//                           <label htmlFor="categoryDescription">Description</label>
+//                           <textarea
+//                             id="categoryDescription"
+//                             name="description"
+//                             value={editCategoryData.description}
+//                             onChange={handleCategoryInputChange}
+//                             placeholder="Enter category description"
+//                           />
+//                         </div>
+                        
+//                         <div className="form-group">
+//                           <label htmlFor="categoryImage">Update Image</label>
+//                           <input
+//                             type="file"
+//                             id="categoryImage"
+//                             name="image"
+//                             accept="image/*"
+//                             onChange={handleCategoryInputChange}
+//                           />
+//                         </div>
+
+//                         <div className="checkbox-group">
+//                           <input
+//                             type="checkbox"
+//                             id="categoryActive"
+//                             name="isActive"
+//                             checked={editCategoryData.isActive}
+//                             onChange={handleCategoryInputChange}
+//                           />
+//                           <label htmlFor="categoryActive">Active</label>
+//                         </div>
+
+//                         <div className="form-actions">
+//                           <button type="submit" className="save-button" disabled={loading}>
+//                             {loading ? 'Saving...' : 'Save Changes'}
+//                           </button>
+//                           <button type="button" onClick={() => setEditingCategory(null)} className="cancel-button">
+//                             Cancel
+//                           </button>
+//                         </div>
+//                       </form>
+//                     </div>
+//                   )}
+//                 </div>
+//               ))}
+//             </div>
+//           )}
 //         </div>
 //       )}
 //     </div>
@@ -322,6 +682,7 @@
 
 // export default ManageItems;
 
+
 import React, { useState, useEffect } from 'react';
 import { ref, onValue, update, remove } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -329,10 +690,13 @@ import { db, storage } from '../firebase/config';
 import '../styles/pages/ManageItems.css';
 
 const ManageItems = () => {
+  const [activeTab, setActiveTab] = useState('items'); // 'items' or 'categories'
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
     description: '',
@@ -346,14 +710,22 @@ const ManageItems = () => {
     category: 'Meat',
     image: null,
     featured: false,
+    isActive: true,
+    meatCut: 'jc-jatka'
+  });
+  const [editCategoryData, setEditCategoryData] = useState({
+    name: '',
+    description: '',
+    image: null,
     isActive: true
   });
-  const [categories] = useState(['Meat', 'Seafood', 'Shop by categories']); // Predefined categories
+
+  const predefinedCategories = ['Meat', 'Seafood', 'Shop by categories', 'Bestsellers', 'Match Day Essentials', 'Premium fish & seafood selection'];
 
   useEffect(() => {
+    // Fetch Items
     const itemsRef = ref(db, 'items');
-    const unsubscribe = onValue(itemsRef, (snapshot) => {
-      setLoading(true);
+    const itemsUnsubscribe = onValue(itemsRef, (snapshot) => {
       try {
         if (snapshot.exists()) {
           const itemsData = [];
@@ -370,19 +742,48 @@ const ManageItems = () => {
       } catch (err) {
         console.error('Error fetching items:', err);
         setError('Failed to load items. Please try again later.');
-      } finally {
-        setLoading(false);
       }
     }, (err) => {
       console.error('Error listening to items:', err);
       setError('Failed to load items. Please try again later.');
+    });
+
+    // Fetch Categories
+    const categoriesRef = ref(db, 'displayCategories');
+    const categoriesUnsubscribe = onValue(categoriesRef, (snapshot) => {
+      try {
+        if (snapshot.exists()) {
+          const categoriesData = [];
+          snapshot.forEach((childSnapshot) => {
+            categoriesData.push({
+              firebaseKey: childSnapshot.key,
+              ...childSnapshot.val()
+            });
+          });
+          setCategories(categoriesData);
+        } else {
+          setCategories([]);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        setError('Failed to load categories. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }, (err) => {
+      console.error('Error listening to categories:', err);
+      setError('Failed to load categories. Please try again later.');
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      itemsUnsubscribe();
+      categoriesUnsubscribe();
+    };
   }, []);
 
-  const handleEdit = (item) => {
+  // Item Management Functions
+  const handleEditItem = (item) => {
     setEditingItem(item);
     setEditFormData({
       name: item.name || '',
@@ -397,11 +798,15 @@ const ManageItems = () => {
       category: item.category || 'Meat',
       image: null,
       featured: item.featured || false,
-      isActive: item.isActive || true
+      isActive: item.isActive || true,
+      meatCut: item.meatCut || 'jc-jatka'
     });
+    
+    // Prevent body scrolling when popup is open
+    document.body.style.overflow = 'hidden';
   };
 
-  const handleInputChange = (e) => {
+  const handleItemInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     setEditFormData(prev => ({
       ...prev,
@@ -409,7 +814,7 @@ const ManageItems = () => {
     }));
   };
 
-  const handleSaveEdit = async (e) => {
+  const handleSaveItemEdit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
@@ -418,14 +823,15 @@ const ManageItems = () => {
 
       if (editFormData.image) {
         const folderPath = editFormData.category === 'Shop by categories' && editFormData.displayCategory
-          ? `items/${editFormData.displayCategory}`
-          : `items/${editFormData.category.replace(/\s+/g, '-').toLowerCase()}`;
+          ? `items/${editFormData.displayCategory}/${editFormData.meatCut}`
+          : `items/${editFormData.category.replace(/\s+/g, '-').toLowerCase()}/${editFormData.meatCut}`;
         const imageStorageRef = storageRef(storage, `${folderPath}/${Date.now()}_${editFormData.image.name}`);
         const snapshot = await uploadBytes(imageStorageRef, editFormData.image);
         imageUrl = await getDownloadURL(snapshot.ref);
       }
 
       const updatedItem = {
+        ...editingItem,
         name: editFormData.name,
         description: editFormData.description,
         weight: editFormData.weight,
@@ -438,30 +844,17 @@ const ManageItems = () => {
         category: editFormData.category,
         image: imageUrl,
         featured: editFormData.featured,
-        isActive: editFormData.isActive
+        isActive: editFormData.isActive,
+        meatCut: editFormData.meatCut,
+        updatedAt: Date.now()
       };
-
-      if (editFormData.category === 'Shop by categories') {
-        updatedItem.displayCategory = editFormData.displayCategory || '';
-      }
 
       await update(ref(db, `items/${editingItem.firebaseKey}`), updatedItem);
       setEditingItem(null);
-      setEditFormData({
-        name: '',
-        description: '',
-        weight: '',
-        pieces: '',
-        serves: '',
-        price: '',
-        originalPrice: '',
-        discount: '',
-        deliveryTime: '30',
-        category: 'Meat',
-        image: null,
-        featured: false,
-        isActive: true
-      });
+      resetItemForm();
+      
+      // Re-enable body scrolling
+      document.body.style.overflow = '';
     } catch (error) {
       console.error('Error updating item:', error);
       setError('Failed to update item. Please try again.');
@@ -470,18 +863,21 @@ const ManageItems = () => {
     }
   };
 
-  const handleToggleStatus = async (firebaseKey, currentActive) => {
+  const handleToggleItemStatus = async (firebaseKey, currentActive) => {
     try {
       const itemRef = ref(db, `items/${firebaseKey}`);
-      await update(itemRef, { isActive: !currentActive });
+      await update(itemRef, { 
+        isActive: !currentActive,
+        updatedAt: Date.now()
+      });
     } catch (error) {
       console.error('Error toggling item status:', error);
       setError('Failed to update item status. Please try again.');
     }
   };
 
-  const handleDelete = async (firebaseKey) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+  const handleDeleteItem = async (firebaseKey) => {
+    if (window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
       try {
         await remove(ref(db, `items/${firebaseKey}`));
       } catch (error) {
@@ -491,12 +887,138 @@ const ManageItems = () => {
     }
   };
 
-  if (loading) {
+  // Category Management Functions
+  const handleEditCategory = (category) => {
+    setEditingCategory(category);
+    setEditCategoryData({
+      name: category.name || '',
+      description: category.description || '',
+      image: null,
+      isActive: category.isActive !== false
+    });
+    
+    // Prevent body scrolling when popup is open
+    document.body.style.overflow = 'hidden';
+  };
+
+  const handleCategoryInputChange = (e) => {
+    const { name, value, type, checked, files } = e.target;
+    setEditCategoryData(prev => ({
+      ...prev,
+      [name]: type === 'file' ? files[0] : type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSaveCategoryEdit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      let imageUrl = editingCategory.image;
+
+      if (editCategoryData.image) {
+        const imageStorageRef = storageRef(storage, `displayCategories/${Date.now()}_${editCategoryData.image.name}`);
+        const snapshot = await uploadBytes(imageStorageRef, editCategoryData.image);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const updatedCategory = {
+        ...editingCategory,
+        name: editCategoryData.name,
+        description: editCategoryData.description,
+        image: imageUrl,
+        isActive: editCategoryData.isActive,
+        updatedAt: Date.now()
+      };
+
+      await update(ref(db, `displayCategories/${editingCategory.firebaseKey}`), updatedCategory);
+      setEditingCategory(null);
+      resetCategoryForm();
+      
+      // Re-enable body scrolling
+      document.body.style.overflow = '';
+    } catch (error) {
+      console.error('Error updating category:', error);
+      setError('Failed to update category. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleCategoryStatus = async (firebaseKey, currentActive) => {
+    try {
+      const categoryRef = ref(db, `displayCategories/${firebaseKey}`);
+      await update(categoryRef, { 
+        isActive: !currentActive,
+        updatedAt: Date.now()
+      });
+    } catch (error) {
+      console.error('Error toggling category status:', error);
+      setError('Failed to update category status. Please try again.');
+    }
+  };
+
+  const handleDeleteCategory = async (firebaseKey, categoryName) => {
+    if (window.confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone and may affect existing products.`)) {
+      try {
+        await remove(ref(db, `displayCategories/${firebaseKey}`));
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        setError('Failed to delete category. Please try again.');
+      }
+    }
+  };
+
+  // Handle modal close
+  const handleCloseItemModal = () => {
+    setEditingItem(null);
+    resetItemForm();
+    // Re-enable body scrolling
+    document.body.style.overflow = '';
+  };
+
+  const handleCloseCategoryModal = () => {
+    setEditingCategory(null);
+    resetCategoryForm();
+    // Re-enable body scrolling
+    document.body.style.overflow = '';
+  };
+
+  // Utility Functions
+  const resetItemForm = () => {
+    setEditFormData({
+      name: '',
+      description: '',
+      weight: '',
+      pieces: '',
+      serves: '',
+      price: '',
+      originalPrice: '',
+      discount: '',
+      deliveryTime: '30',
+      category: 'Meat',
+      image: null,
+      featured: false,
+      isActive: true,
+      meatCut: 'jc-jatka'
+    });
+  };
+
+  const resetCategoryForm = () => {
+    setEditCategoryData({
+      name: '',
+      description: '',
+      image: null,
+      isActive: true
+    });
+  };
+
+  if (loading && items.length === 0 && categories.length === 0) {
     return (
       <div className="manage-items-container">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>Loading items...</p>
+          <p>Loading data...</p>
         </div>
       </div>
     );
@@ -505,205 +1027,368 @@ const ManageItems = () => {
   if (error) {
     return (
       <div className="manage-items-container">
-        <div className="alert error">{error}</div>
+        <div className="alert error">
+          {error}
+          <button onClick={() => setError(null)} className="close-error">×</button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="manage-items-container">
-      <h1>Manage Items</h1>
-      {items.length === 0 ? (
-        <div className="no-items">No items available to manage.</div>
-      ) : (
-        <div className="items-list">
-          {items.map(item => (
-            <div key={item.firebaseKey} className="item-card">
-              <div className="item-image">
-                {item.image ? (
-                  <img src={item.image} alt={item.name} />
-                ) : (
-                  <div className="no-image">No image uploaded</div>
-                )}
-              </div>
-              <div className="item-details">
-                <h3>{item.name}</h3>
-                <p><strong>Category:</strong> {item.category}</p>
-                {item.displayCategory && <p><strong>Display Category:</strong> {item.displayCategory}</p>}
-                <p><strong>Price:</strong> ₹{item.price}</p>
-                <p><strong>Original Price:</strong> ₹{item.originalPrice}</p>
-                <p><strong>Discount:</strong> {item.discount}%</p>
-                <p><strong>Status:</strong> <span className={item.isActive ? 'active' : 'inactive'}>{item.isActive ? 'Active' : 'Inactive'}</span></p>
-              </div>
-              <div className="item-actions">
-                <button onClick={() => handleEdit(item)} className="edit-button">Edit</button>
-                <button onClick={() => handleToggleStatus(item.firebaseKey, item.isActive)} className="toggle-button">
-                  {item.isActive ? 'Deactivate' : 'Activate'}
-                </button>
-                <button onClick={() => handleDelete(item.firebaseKey)} className="delete-button">Delete</button>
-              </div>
-              {editingItem && editingItem.firebaseKey === item.firebaseKey && (
-                <form onSubmit={handleSaveEdit} className="edit-form">
-                  <div className="form-group">
-                    <label htmlFor="name">Name*</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={editFormData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="description">Description</label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={editFormData.description}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="weight">Weight*</label>
-                    <input
-                      type="text"
-                      id="weight"
-                      name="weight"
-                      value={editFormData.weight}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="pieces">Pieces</label>
-                    <input
-                      type="text"
-                      id="pieces"
-                      name="pieces"
-                      value={editFormData.pieces}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="serves">Serves</label>
-                    <input
-                      type="number"
-                      id="serves"
-                      name="serves"
-                      value={editFormData.serves}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="originalPrice">Original Price* (₹)</label>
-                    <input
-                      type="number"
-                      id="originalPrice"
-                      name="originalPrice"
-                      value={editFormData.originalPrice}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="discount">Discount %</label>
-                    <input
-                      type="number"
-                      id="discount"
-                      name="discount"
-                      value={editFormData.discount}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="price">Price* (₹)</label>
-                    <input
-                      type="number"
-                      id="price"
-                      name="price"
-                      value={editFormData.price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="deliveryTime">Delivery Time (minutes)</label>
-                    <input
-                      type="number"
-                      id="deliveryTime"
-                      name="deliveryTime"
-                      value={editFormData.deliveryTime}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="category">Category*</label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={editFormData.category}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {editFormData.category === 'Shop by categories' && (
-                    <div className="form-group">
-                      <label htmlFor="displayCategory">Display Category*</label>
-                      <input
-                        type="text"
-                        id="displayCategory"
-                        name="displayCategory"
-                        value={editFormData.displayCategory || ''}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  )}
-                  <div className="form-group">
-                    <label htmlFor="image">Image</label>
-                    <input
-                      type="file"
-                      id="image"
-                      name="image"
-                      accept="image/*"
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-group checkbox">
-                    <input
-                      type="checkbox"
-                      id="featured"
-                      name="featured"
-                      checked={editFormData.featured}
-                      onChange={handleInputChange}
-                    />
-                    <label htmlFor="featured">Featured Item</label>
-                  </div>
-                  <div className="form-group checkbox">
-                    <input
-                      type="checkbox"
-                      id="isActive"
-                      name="isActive"
-                      checked={editFormData.isActive}
-                      onChange={handleInputChange}
-                    />
-                    <label htmlFor="isActive">Active</label>
-                  </div>
-                  <div className="form-actions">
-                    <button type="submit" className="save-button" disabled={loading}>
-                      {loading ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button type="button" onClick={() => setEditingItem(null)} className="cancel-button">Cancel</button>
-                  </div>
-                </form>
-              )}
+      <div className="page-header">
+        <h1>Manage Items & Categories</h1>
+        <p>Admin panel to manage all products and categories</p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="tab-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'items' ? 'active' : ''}`}
+          onClick={() => setActiveTab('items')}
+        >
+          Manage Items ({items.length})
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'categories' ? 'active' : ''}`}
+          onClick={() => setActiveTab('categories')}
+        >
+          Manage Categories ({categories.length})
+        </button>
+      </div>
+
+      {/* Items Tab */}
+      {activeTab === 'items' && (
+        <div className="tab-content">
+          {items.length === 0 ? (
+            <div className="no-items">
+              <h3>No items available to manage</h3>
+              <p>Items created through the admin panel will appear here.</p>
             </div>
-          ))}
+          ) : (
+            <div className="items-list">
+              <div className="list-header">
+                <h2>All Items ({items.length})</h2>
+              </div>
+              {items.map(item => (
+                <div key={item.firebaseKey} className={`item-card ${!item.isActive ? 'inactive' : ''}`}>
+                  <div className="item-image">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} />
+                    ) : (
+                      <div className="no-image">No image uploaded</div>
+                    )}
+                  </div>
+                  <div className="item-details">
+                    <h3>{item.name}</h3>
+                    <div className="item-info">
+                      <p><strong>Category:</strong> {item.category}</p>
+                      {item.displayCategory && <p><strong>Display Category:</strong> {item.displayCategory}</p>}
+                      {item.meatCut && <p><strong>Meat Cut:</strong> {item.meatCut === 'jc-jatka' ? 'JC Jatka' : 'Halal Cut'}</p>}
+                      <p><strong>Weight:</strong> {item.weight}</p>
+                      <p><strong>Price:</strong> ₹{item.price}</p>
+                      <p><strong>Original Price:</strong> ₹{item.originalPrice}</p>
+                      <p><strong>Discount:</strong> {item.discount}%</p>
+                      <p><strong>Status:</strong> 
+                        <span className={`status ${item.isActive ? 'active' : 'inactive'}`}>
+                          {item.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </p>
+                      {item.featured && <p><strong>Featured:</strong> <span className="featured-badge">Yes</span></p>}
+                    </div>
+                  </div>
+                  <div className="item-actions">
+                    <button onClick={() => handleEditItem(item)} className="edit-button">Edit</button>
+                    <button 
+                      onClick={() => handleToggleItemStatus(item.firebaseKey, item.isActive)} 
+                      className={`toggle-button ${item.isActive ? 'deactivate' : 'activate'}`}
+                    >
+                      {item.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button onClick={() => handleDeleteItem(item.firebaseKey)} className="delete-button">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Categories Tab */}
+      {activeTab === 'categories' && (
+        <div className="tab-content">
+          {categories.length === 0 ? (
+            <div className="no-items">
+              <h3>No categories available to manage</h3>
+              <p>Categories created through the admin panel will appear here.</p>
+            </div>
+          ) : (
+            <div className="categories-list">
+              <div className="list-header">
+                <h2>All Categories ({categories.length})</h2>
+              </div>
+              {categories.map(category => (
+                <div key={category.firebaseKey} className={`category-card ${!category.isActive ? 'inactive' : ''}`}>
+                  <div className="category-image">
+                    {category.image ? (
+                      <img src={category.image} alt={category.name} />
+                    ) : (
+                      <div className="no-image">No image uploaded</div>
+                    )}
+                  </div>
+                  <div className="category-details">
+                    <h3>{category.name}</h3>
+                    <div className="category-info">
+                      <p><strong>Description:</strong> {category.description || 'No description'}</p>
+                      <p><strong>ID:</strong> {category.id}</p>
+                      <p><strong>Product Count:</strong> {category.productCount || 0}</p>
+                      <p><strong>Status:</strong> 
+                        <span className={`status ${category.isActive !== false ? 'active' : 'inactive'}`}>
+                          {category.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </p>
+                      {category.createdAt && (
+                        <p><strong>Created:</strong> {new Date(category.createdAt).toLocaleDateString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="category-actions">
+                    <button onClick={() => handleEditCategory(category)} className="edit-button">Edit</button>
+                    <button 
+                      onClick={() => handleToggleCategoryStatus(category.firebaseKey, category.isActive !== false)} 
+                      className={`toggle-button ${category.isActive !== false ? 'deactivate' : 'activate'}`}
+                    >
+                      {category.isActive !== false ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button onClick={() => handleDeleteCategory(category.firebaseKey, category.name)} className="delete-button">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Edit Item Popup - Moved outside of item cards */}
+      {editingItem && (
+        <div className="modal-overlay" onClick={handleCloseItemModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <form onSubmit={handleSaveItemEdit} className="edit-form">
+              <div className="modal-header">
+                <h3>Edit Item</h3>
+                <button type="button" className="modal-close" onClick={handleCloseItemModal}>×</button>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="name">Name*</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleItemInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="weight">Weight*</label>
+                  <input
+                    type="text"
+                    id="weight"
+                    name="weight"
+                    value={editFormData.weight}
+                    onChange={handleItemInputChange}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="description">Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={editFormData.description}
+                  onChange={handleItemInputChange}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="originalPrice">Original Price* (₹)</label>
+                  <input
+                    type="number"
+                    id="originalPrice"
+                    name="originalPrice"
+                    value={editFormData.originalPrice}
+                    onChange={handleItemInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="price">Selling Price* (₹)</label>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={editFormData.price}
+                    onChange={handleItemInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="discount">Discount %</label>
+                  <input
+                    type="number"
+                    id="discount"
+                    name="discount"
+                    value={editFormData.discount}
+                    onChange={handleItemInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="category">Category*</label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={editFormData.category}
+                    onChange={handleItemInputChange}
+                    required
+                  >
+                    {predefinedCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="meatCut">Meat Cut</label>
+                  <select
+                    id="meatCut"
+                    name="meatCut"
+                    value={editFormData.meatCut}
+                    onChange={handleItemInputChange}
+                  >
+                    <option value="jc-jatka">JC Jatka</option>
+                    <option value="halal-cut">Halal Cut</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="image">Update Image</label>
+                <input
+                  type="file"
+                  id="image"
+                  name="image"
+                  accept="image/*"
+                  onChange={handleItemInputChange}
+                />
+              </div>
+
+              <div className="form-checkboxes">
+                <div className="checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    name="featured"
+                    checked={editFormData.featured}
+                    onChange={handleItemInputChange}
+                  />
+                  <label htmlFor="featured">Featured Item</label>
+                </div>
+                <div className="checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    name="isActive"
+                    checked={editFormData.isActive}
+                    onChange={handleItemInputChange}
+                  />
+                  <label htmlFor="isActive">Active</label>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="save-button" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={handleCloseItemModal} className="cancel-button">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Popup - Moved outside of category cards */}
+      {editingCategory && (
+        <div className="modal-overlay" onClick={handleCloseCategoryModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <form onSubmit={handleSaveCategoryEdit} className="edit-form">
+              <div className="modal-header">
+                <h3>Edit Category</h3>
+                <button type="button" className="modal-close" onClick={handleCloseCategoryModal}>×</button>
+              </div>
+              <div className="form-group">
+                <label htmlFor="categoryName">Category Name*</label>
+                <input
+                  type="text"
+                  id="categoryName"
+                  name="name"
+                  value={editCategoryData.name}
+                  onChange={handleCategoryInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="categoryDescription">Description</label>
+                <textarea
+                  id="categoryDescription"
+                  name="description"
+                  value={editCategoryData.description}
+                  onChange={handleCategoryInputChange}
+                  placeholder="Enter category description"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="categoryImage">Update Image</label>
+                <input
+                  type="file"
+                  id="categoryImage"
+                  name="image"
+                  accept="image/*"
+                  onChange={handleCategoryInputChange}
+                />
+              </div>
+
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="categoryActive"
+                  name="isActive"
+                  checked={editCategoryData.isActive}
+                  onChange={handleCategoryInputChange}
+                />
+                <label htmlFor="categoryActive">Active</label>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="save-button" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={handleCloseCategoryModal} className="cancel-button">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

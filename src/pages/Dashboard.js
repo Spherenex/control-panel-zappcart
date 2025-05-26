@@ -99,7 +99,7 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <h1>Manage Banners</h1>
         <Link to="/create" className="create-button">
-          Create New Banner
+          Create and Edit Banner
         </Link>
       </div>
       
